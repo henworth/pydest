@@ -85,17 +85,17 @@ class Manifest:
             # Manifest doesn't exist, or isn't up to date
             # Download and extract the current manifest
             # Remove the zip file once finished
-            filename = await self._download_file(manifest_url, MANIFEST_ZIP)
-            if os.path.isfile('./{}'.format(MANIFEST_ZIP)):
-                zip_ref = zipfile.ZipFile('./{}'.format(MANIFEST_ZIP), 'r')
+            filename = './{}'.format(MANIFEST_ZIP)
+            await self._download_file(manifest_url, filename)
+            if os.path.isfile(filename):
+                zip_ref = zipfile.ZipFile(filename, 'r')
                 zip_ref.extractall('./')
                 zip_ref.close()
-                os.remove(MANIFEST_ZIP)
+                os.remove(filename)
             else:
                 raise pydest.PydestException("Could not retrieve Manifest from Bungie.net")
 
         self.manifest_files[language] = manifest_file_name
-
 
     async def _download_file(self, url, name):
         """Async file download
