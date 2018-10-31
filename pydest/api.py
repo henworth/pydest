@@ -239,6 +239,23 @@ class API:
         url = url.format(membership_type, membership_id, character_id, ','.join([str(i) for i in groups]), ','.join([str(i) for i in modes]))
         return await self._get_request(url)
 
+    async def get_activity_history(self, membership_type, membership_id, character_id=0, mode=0, count=10):
+        """Gets activity history for indicated character
+        Args:
+            membership_type (int):
+                A valid non-BungieNet membership type (BungieMembershipType)
+            membership_id (int):
+                Destiny membership ID
+            character_id (int) [optional]:
+                The id of the character to retrieve stats for. If not provided, stats for all
+                characters will be retrieved.
+            mode (int) [optional]:
+                The id of the game mode to include in the response
+                (see Destiny.HistoricalStats.Definitions.DestinyActivityModeType).
+        """
+        url = DESTINY2_URL + '{}/Account/{}/Character/{}/Stats/Activities/?count={}&mode={}'
+        url = url.format(membership_type, membership_id, character_id, count, mode)
+        return await self._get_request(url)
 
     async def get_public_milestone_content(self, milestone_hash):
         """Gets custom localized content for the milestone of
@@ -281,6 +298,19 @@ class API:
         url = url.format(membership_type, membership_id)
         return await self._get_request(url)
 
+    async def get_group_members(self, group_id):
+        """Gets list of members in a group
+
+        Args:
+            group_id (int):
+                The id of the group
+
+        Returns:
+            json(dict)
+        """
+        url = GROUP_URL + '{}/Members/'
+        url = url.format(group_id)
+        return await self._get_request(url)
 
     async def get_weekly_milestones(self, group_id):
         """Gets the weekly milestones for a clan
