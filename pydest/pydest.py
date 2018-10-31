@@ -1,8 +1,7 @@
 import aiohttp
-import async_timeout
+import asyncio
 import os
 import zipfile
-import asyncio
 
 from pydest.api import API
 from pydest.manifest import Manifest
@@ -45,9 +44,8 @@ class Pydest:
         """
         await self._manifest.update_manifest(language)
 
-
     def close(self):
-        self._session.close()
+        asyncio.ensure_future(self._session.close())
 
 
 class PydestException(Exception):
