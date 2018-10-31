@@ -8,8 +8,8 @@ import sqlite3
 import pydest
 from pydest.dbase import DBase
 
-
 MANIFEST_ZIP = 'manifest_zip'
+
 
 class Manifest:
 
@@ -60,7 +60,6 @@ class Manifest:
                 return json.loads(res[0][0])
             else:
                 raise pydest.PydestException("No entry found with id: {}".format(hash_id))
-
 
     async def update_manifest(self, language):
         """Download the latest manifest file for the given language if necessary
@@ -117,7 +116,6 @@ class Manifest:
                             break
                         f_handle.write(chunk)
                 return await response.release()
-
 
     def _twos_comp_32(self, val):
         val = int(val)

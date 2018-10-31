@@ -6,10 +6,10 @@ from functools import partial
 
 import pydest
 
-
 DESTINY2_URL = 'https://www.bungie.net/Platform/Destiny2/'
 USER_URL = 'https://www.bungie.net/Platform/User/'
 GROUP_URL = 'https://www.bungie.net/Platform/GroupV2/'
+
 
 class API:
     """This module contains async requests for the Destiny 2 API.
@@ -23,7 +23,6 @@ class API:
         self.api_key = api_key
         self.session = session
 
-
     async def _get_request(self, url):
         """Make an async GET request and attempt to return json (dict)"""
         headers = {'X-API-KEY':'{}'.format(self.api_key)}
@@ -31,10 +30,9 @@ class API:
         try:
             async with self.session.get(encoded_url, headers=headers) as r:
                 json_res = await r.json()
-        except aiohttp.client_exceptions.ClientResponseError as e:
+        except aiohttp.client_exceptions.ClientResponseError:
             raise pydest.PydestException("Could not connect to Bungie.net")
         return json_res
-
 
     async def get_bungie_net_user_by_id(self, bungie_id):
         """Loads a bungienet user by membership id
@@ -48,7 +46,6 @@ class API:
         url = USER_URL + 'GetBungieNetUserById/{}/'
         url = url.format(bungie_id)
         return await self._get_request(url)
-
 
     async def get_membership_data_by_id(self, bungie_id, membership_type=-1):
         """Returns a list of accounts associated with the supplied membership ID and membership
@@ -69,7 +66,6 @@ class API:
         url = url.format(bungie_id, membership_type)
         return await self._get_request(url)
 
-
     async def get_destiny_manifest(self):
         """Returns the current version of the manifest
 
@@ -78,7 +74,6 @@ class API:
         """
         url = DESTINY2_URL + 'Manifest'
         return await self._get_request(url)
-
 
     async def search_destiny_entities(self, entity_type, search_term, page=0):
         """Gets a page list of Destiny items
@@ -98,7 +93,6 @@ class API:
         url = url.format(entity_type, search_term, page)
         return await self._get_request(url)
 
-
     async def search_destiny_player(self, membership_type, display_name):
         """Returns a list of Destiny memberships given a full Gamertag or PSN ID
 
@@ -114,7 +108,6 @@ class API:
         url = DESTINY2_URL + 'SearchDestinyPlayer/{}/{}/'
         url = url.format(membership_type, display_name)
         return await self._get_request(url)
-
 
     async def get_profile(self, membership_type, membership_id, components):
         """Returns Destiny Profile information for the supplied membership
@@ -136,7 +129,6 @@ class API:
         url = DESTINY2_URL + '{}/Profile/{}/?components={}'
         url = url.format(membership_type, membership_id, ','.join([str(i) for i in components]))
         return await self._get_request(url)
-
 
     async def get_character(self, membership_type, membership_id, character_id, components):
         """Returns character information for the supplied character
@@ -161,7 +153,6 @@ class API:
         url = url.format(membership_type, membership_id, character_id, ','.join([str(i) for i in components]))
         return await self._get_request(url)
 
-
     async def get_clan_weekly_reward_state(self, group_id):
         """Returns information on the weekly clan rewards and if the clan has earned
         them or not. Note that this will always report rewards as not redeemed.
@@ -176,7 +167,6 @@ class API:
         url = DESTINY2_URL + 'Clan/{}/WeeklyRewardState/'
         url = url.format(group_id)
         return await self._get_request(url)
-
 
     async def get_item(self, membership_type, membership_id, item_instance_id, components):
         """Retrieve the details of an instanced Destiny Item. An instanced Destiny
@@ -203,7 +193,6 @@ class API:
         url = url.format(membership_type, membership_id, item_instance_id, ','.join([str(i) for i in components]))
         return await self._get_request(url)
 
-
     async def get_post_game_carnage_report(self, activity_id):
         """Gets the available post game carnage report for the activity ID
 
@@ -218,7 +207,6 @@ class API:
         url = url.format(activity_id)
         return await self._get_request(url)
 
-
     async def get_historical_stats_definition(self):
         """Gets historical stats definitions
 
@@ -227,7 +215,6 @@ class API:
         """
         url = DESTINY2_URL + 'Stats/Definition/'
         return await self._get_request(url)
-
 
     async def get_historical_stats(self, membership_type, membership_id, character_id=0, groups=[], modes=[]):
         """Gets historical stats for indicated character
@@ -268,7 +255,6 @@ class API:
         url = url.format(milestone_hash)
         return await self._get_request(url)
 
-
     async def get_public_milestones(self):
         """Gets information about the current public Milestones
 
@@ -280,13 +266,13 @@ class API:
 
     async def get_groups_for_member(self, membership_type, membership_id):
         """Gets information about the groups an individual member has joined
-        
+
         Args:
             membership_type (int):
                 A valid non-BungieNet membership type (BungieMembershipType)
             membership_id (int):
                 Destiny membership ID
-        
+
         Returns:
             json(dict)
         """
@@ -300,24 +286,23 @@ class API:
         """Gets the weekly milestones for a clan
 
         Args:
-            groupId (int):
-                The groupId of clan.
+            group_id (int):
+                The id of the group
 
-        returns json(dict) 
+        returns json(dict)
         """
         # /Clan/{groupId}/WeeklyRewardState/
         url = DESTINY2_URL + 'Clan/{}/WeeklyRewardState/'.format(group_id)
         # using the returned json
         return await self._get_request(url)
 
-
     async def get_milestone_definitions(self, milestone_hash):
         """Gets the milestones definition for a given milestoneHash
-        
+
         Args:
             milestone_hash (int):
                 The hash value that represents the milestone within the manifest
-                
+
         returns json(dict)
         """
         # /Manifest/DestinyMilestoneDefinition/{milestoneHash}
