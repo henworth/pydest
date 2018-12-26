@@ -93,7 +93,8 @@ class TestGetCharacter(BaseTestClass):
             character_hash = item
             break
 
-        r = await destiny.api.get_character(self._membership_type, self._membership_id, character_hash, ['CharacterActivities'])
+        r = await destiny.api.get_character(self._membership_type, self._membership_id, character_hash,
+                                            ['CharacterActivities'])
         await destiny.close()
         return r
 
@@ -123,7 +124,8 @@ class TestGetItem(BaseTestClass):
         character_hash = profile['Response']['characters']['data'][characters[0]]['characterId']
 
         # Get character equipment to get an item Instance Id
-        character_data = await destiny.api.get_character(self._membership_type, self._membership_id, character_hash, ['CharacterEquipment'])
+        character_data = await destiny.api.get_character(self._membership_type, self._membership_id, character_hash,
+                                                         ['CharacterEquipment'])
         item_id = character_data['Response']['equipment']['data']['items'][0]['itemInstanceId']
 
         r = await destiny.api.get_item(self._membership_type, self._membership_id, item_id, ['ItemCommonData'])
@@ -202,3 +204,25 @@ class TestGetMilestoneDefinitions(BaseTestClass):
         r = await destiny.api.get_milestone_definitions(milestone_hash)
         await destiny.close()
         return r
+
+
+class TestGetActivityHistory(BaseTestClass):
+
+    @pytest.mark.asyncio
+    @pytest.fixture
+    async def res(self):
+        destiny = pydest.Pydest(api_key)
+        activity_history = await destiny.api.get_activity_history(self._membership_type, self._membership_id)
+        return activity_history
+
+
+class TestGetGroupMembers(BaseTestClass):
+
+    @pytest.mark.asyncio
+    @pytest.fixture
+    async def res(self):
+        destiny = pydest.Pydest(api_key)
+        groups_r = await destiny.api.get_groups_for_member(self._membership_type, self._membership_id)
+        group = groups_r['Response']['results'][0]['group']['groupId']
+        members = await destiny.api.get_group_members(group)
+        return members
