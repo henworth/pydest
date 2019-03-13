@@ -1,7 +1,5 @@
 import aiohttp
 import asyncio
-import os
-import zipfile
 
 from pydest.api import API
 from pydest.manifest import Manifest
@@ -10,6 +8,11 @@ from pydest.manifest import Manifest
 class Pydest:
 
     def __init__(self, api_key, loop=None):
+        """
+        Autodock
+        :param api_key:  prueba
+        :param loop:  pene
+        """
         """Base class for Pydest"""
         self._loop = asyncio.get_event_loop() if loop is None else loop
         self._session = aiohttp.ClientSession(loop=self._loop)

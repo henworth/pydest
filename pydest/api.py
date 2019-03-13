@@ -1,12 +1,10 @@
 import aiohttp
-import re
-import json
 import urllib
-from functools import partial
 
 import pydest
 
-DESTINY2_URL = 'https://www.bungie.net/Platform/Destiny2/'
+DESTINY2_URL = 'https://www.bungie.net/Platform'
+APP_URL = f"{DESTINY2_URL}/App"
 USER_URL = 'https://www.bungie.net/Platform/User/'
 GROUP_URL = 'https://www.bungie.net/Platform/GroupV2/'
 
@@ -17,16 +15,26 @@ class API:
     these functions, but you will likely need to refer to the
     official API documentation as well. The documentation can be
     found at https://bungie-net.github.io/multi/index.html
+
+
+       App Endpoints
+        App.GetApplicationApiUsage
+            - /App/ApiUsage/{applicationId}/
+        App.GetBungieApplications
+            - /App/FirstParty/
+
+
     """
 
     def __init__(self, api_key, session):
         self.api_key = api_key
         self.session = session
 
-
-    async def _get_request(self, url, payload={}):
+    async def _get_request(self, url, payload={}, token=None):
         """Make an async GET request and attempt to return json (dict)"""
         headers = {'X-API-KEY':f'{self.api_key}'}
+        if token is not None:
+            headers.update({'Authorization': f"Bearer {token}"})
         encoded_url = urllib.parse.quote(url, safe=':/?&=,.')
         try:
             async with self.session.get(encoded_url, headers=headers, params=payload) as r:
@@ -34,6 +42,41 @@ class API:
         except aiohttp.client_exceptions.ClientResponseError:
             raise pydest.PydestException("Could not connect to Bungie.net")
         return json_res
+
+    async def get_application_api_usage(self, applicationId, oauth2Token):
+        """
+        Verb: GET
+        Path: /App/ApiUsage/{applicationId}/
+        Get API usage by application for time frame specified.
+        You can go as far back as 30 days ago, and can ask for up to a 48 hour window of time in a single request.
+        You must be authenticated with at least the ReadUserData permission to access this endpoint.
+
+        Required Scope(s)
+            oauth2: ReadUserData
+
+        Args:
+            applicationId (int): ID of the application to get usage statistics.
+            oauth2Token (str): token Bearer oauth2
+
+        Returns:
+            json (dict)
+        """
+        url = f"{APP_URL}/ApiUsage/{applicationId}"
+        return await self._get_request(url, token=oauth2Token)
+
+    async def get_bungie_application(self):
+        """
+        Verb: GET
+
+        Path: /App/FirstParty/
+
+        Get list of applications created by Bungie.
+
+        :returns:
+            json (dict)
+        """
+        url = f"{APP_URL}/App/FirstParty"
+        return await self._get_request(url)
 
     async def get_bungie_net_user_by_id(self, bungie_id):
         """Loads a bungienet user by membership id
@@ -64,8 +107,7 @@ class API:
         """
         url = USER_URL + f'GetMembershipsById/{bungie_id}/{membership_type}/'
         return await self._get_request(url)
-    
-    
+
     async def get_linked_profiles(self, bungie_id, membership_type=-1):
         """Returns a summary information about all profiles linked to the requesting membership
         type/membership ID that have valid Destiny information. The passed-in Membership
