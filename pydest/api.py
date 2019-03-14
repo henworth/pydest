@@ -5,7 +5,7 @@ import pydest
 
 DESTINY2_URL = 'https://www.bungie.net/Platform'
 APP_URL = f"{DESTINY2_URL}/App"
-USER_URL = 'https://www.bungie.net/Platform/User/'
+USER_URL = f'{DESTINY2_URL}/User'
 GROUP_URL = 'https://www.bungie.net/Platform/GroupV2/'
 
 
@@ -17,11 +17,20 @@ class API:
     found at https://bungie-net.github.io/multi/index.html
 
 
-       App Endpoints
+    App Endpoints
         App.GetApplicationApiUsage
             - /App/ApiUsage/{applicationId}/
         App.GetBungieApplications
             - /App/FirstParty/
+
+    User Endpoints
+        GET: /User/GetBungieNetUserById/{id}/
+        GET: /User/SearchUsers/
+        GET: /User/GetAvailableThemes/
+        GET: /User/GetMembershipsById/{membershipId}/{membershipType}/
+        GET: /User/GetMembershipsForCurrentUser/
+        GET: /User/{membershipId}/Partnerships/
+
 
 
     """
@@ -39,7 +48,7 @@ class API:
         try:
             async with self.session.get(encoded_url, headers=headers, params=payload) as r:
                 json_res = await r.json()
-        except aiohttp.client_exceptions.ClientResponseError:
+        except aiohttp.ClientResponseError:
             raise pydest.PydestException("Could not connect to Bungie.net")
         return json_res
 
@@ -72,23 +81,75 @@ class API:
 
         Get list of applications created by Bungie.
 
-        :returns:
+        Returns:
             json (dict)
         """
         url = f"{APP_URL}/App/FirstParty"
         return await self._get_request(url)
 
     async def get_bungie_net_user_by_id(self, bungie_id):
-        """Loads a bungienet user by membership id
+        """
+        Verb: GET
+
+        Path: /User/GetBungieNetUserById/{id}/
+
+        Loads a bungienet user by membership id.
 
         Args:
-            bungie_id: The requested Bungie.net membership id
+            bungie_id {int} -- The requested Bungie.net membership id.
 
         Returns:
             json (dict)
         """
         url = USER_URL + f'GetBungieNetUserById/{bungie_id}/'
         return await self._get_request(url)
+
+    async def search_users_by_name(self, name):
+        """
+        Verb: GET
+
+        Path: /User/SearchUsers/
+
+        Returns a list of possible users based on the search string
+
+        Args:
+            name (str): The search string.
+        """
+        url = f"{USER_URL}/SearchUsers/?q={name}"
+        return await self._get_request(url)
+
+    async def get_avaliable_themes(self):
+        """
+        Verb: GET
+
+        Path: /User/GetAvailableThemes/
+
+        Returns a list of all available user themes.
+
+        Returns:
+                json (dict)
+
+        """
+        url = f"{USER_URL}/GetAvailableThemes"
+        return await self._get_request(url)
+
+    async def get_membership_data_for_current_user(self,oauth2Token):
+        """
+        Verb: GET
+
+        Path: /User/GetMembershipsForCurrentUser/
+
+
+        Returns a list of accounts associated with signed in user. 
+        This is useful for OAuth implementations that do not give you access to the token response.
+
+        Args:
+            oauth2Token (str): token Bearer oauth2
+        Returns:
+                json (dict)
+        """
+        url = f"{USER_URL}/GetMembershipsForCurrentUser"
+        return await self._get_request(url, oauth2Token)
 
     async def get_membership_data_by_id(self, bungie_id, membership_type=-1):
         """Returns a list of accounts associated with the supplied membership ID and membership
