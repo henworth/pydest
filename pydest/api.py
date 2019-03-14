@@ -6,6 +6,7 @@ import pydest
 DESTINY2_URL = 'https://www.bungie.net/Platform'
 APP_URL = f"{DESTINY2_URL}/App"
 USER_URL = f'{DESTINY2_URL}/User'
+CONTENT_URL = f"{DESTINY2_URL}/Content"
 GROUP_URL = 'https://www.bungie.net/Platform/GroupV2/'
 
 
@@ -25,28 +26,35 @@ class API:
 
     User Endpoints
         GET: /User/GetBungieNetUserById/{id}/
-        GET: /User/SearchUsers/
         GET: /User/GetAvailableThemes/
         GET: /User/GetMembershipsById/{membershipId}/{membershipType}/
         GET: /User/GetMembershipsForCurrentUser/
         GET: /User/{membershipId}/Partnerships/
 
+    Content Endpoints
+        GET: /Content/GetContentType/{type}/
+        GET: /Content/GetContentById/{id}/{locale}/
+        GET: /Content/GetContentByTagAndType/{tag}/{type}/{locale}/
+        GET: /Content/Search/{locale}/
+        GET: /Content/SearchContentByTagAndType/{tag}/{type}/{locale}/
+
 
 
     """
 
-    def __init__(self, api_key, session):
+    def __init__(self, api_key, session, locale):
         self.api_key = api_key
         self.session = session
+        self.locale = locale
 
-    async def _get_request(self, url, payload={}, token=None):
+    async def _get_request(self, url, params=None, token=None):
         """Make an async GET request and attempt to return json (dict)"""
-        headers = {'X-API-KEY':f'{self.api_key}'}
-        if token is not None:
+        headers = {'X-API-KEY': self.api_key}
+        if token:
             headers.update({'Authorization': f"Bearer {token}"})
         encoded_url = urllib.parse.quote(url, safe=':/?&=,.')
         try:
-            async with self.session.get(encoded_url, headers=headers, params=payload) as r:
+            async with self.session.get(encoded_url, headers=headers, params=params) as r:
                 json_res = await r.json()
         except aiohttp.ClientResponseError:
             raise pydest.PydestException("Could not connect to Bungie.net")
@@ -133,26 +141,13 @@ class API:
         url = f"{USER_URL}/GetAvailableThemes"
         return await self._get_request(url)
 
-    async def get_membership_data_for_current_user(self,oauth2Token):
+    async def get_membership_data_by_id(self, bungie_id, membership_type=-1):
         """
         Verb: GET
 
-        Path: /User/GetMembershipsForCurrentUser/
+        Path: /User/GetMembershipsById/{membershipId}/{membershipType}/
 
-
-        Returns a list of accounts associated with signed in user. 
-        This is useful for OAuth implementations that do not give you access to the token response.
-
-        Args:
-            oauth2Token (str): token Bearer oauth2
-        Returns:
-                json (dict)
-        """
-        url = f"{USER_URL}/GetMembershipsForCurrentUser"
-        return await self._get_request(url, oauth2Token)
-
-    async def get_membership_data_by_id(self, bungie_id, membership_type=-1):
-        """Returns a list of accounts associated with the supplied membership ID and membership
+        Returns a list of accounts associated with the supplied membership ID and membership
         type. This will include all linked accounts (even when hidden) if supplied credentials
         permit it.
 
@@ -189,6 +184,161 @@ class API:
         """
         url = USER_URL + f'{membership_type}/Profile/{bungie_id}/LinkedProfiles/'
         return await self._get_request(url)
+
+    async def get_membership_data_for_current_user(self, oauth2Token):
+        """
+        Verb: GET
+
+        Path: /User/GetMembershipsForCurrentUser/
+
+
+        Returns a list of accounts associated with signed in user. 
+        This is useful for OAuth implementations that do not give you access to the token response.
+
+        Args:
+            oauth2Token (str): token Bearer oauth2
+        Returns:
+                json (dict)
+        """
+        url = f"{USER_URL}/GetMembershipsForCurrentUser"
+        return await self._get_request(url, oauth2Token)
+
+    async def get_partnerships(self, membershipId):
+        """
+        Verb: GET
+
+        Path: /User/{membershipId}/Partnerships/
+
+        Returns a user's linked Partnerships.
+
+        Args:
+            membershipId (str): The ID of the member for whom partnerships should be returned.
+        Returns:
+                json (dict)
+        """
+        url = f"{USER_URL}/{membershipId}/Partnerships"
+        return await self._get_request(url)
+
+    async def get_content_type(self, ctype):
+        """
+        Verb: GET
+
+        Path: /Content/GetContentType/{type}/
+
+        Gets an object describing a particular variant of content.
+
+        Args:
+            ctype (str): Content type tag: Help, News, etc. Supply multiple ctypes separated by space.
+        Returns:
+                json (dict)
+        """
+        url = f"{CONTENT_URL}/GetContentType/{ctype}/"
+        return await self._get_request(url)
+
+    async def get_content_by_id(self, cid, locale=None):
+        """
+        Verb: GET
+
+        Path: /Content/GetContentById/{id}/{locale}/
+
+        Returns a content item referenced by id
+        More -> https://bungie-net.github.io/#Content.GetContentById
+        Args:
+            ctype (str): Content type tag: Help, News, etc. Supply multiple ctypes separated by space.
+            locale (str): the locale
+        Returns:
+                json (dict)
+        """
+        if not locale:
+            locale = self.locale
+        url = f"{CONTENT_URL}/GetContentById/{cid}/{locale}/"
+        return await self._get_request(url)
+
+    async def get_content_by_tag_and_type(self, tag, ctype, locale=None):
+        """
+        Verb: GET
+
+        Path: /Content/GetContentByTagAndType/{tag}/{type}/{locale}/
+
+        Returns the newest item that matches a given tag and Content Type.
+        More -> https://bungie-net.github.io/#Content.GetContentByTagAndType
+        Args:
+            tag (str): Tag used on the content to be searched.
+            ctype (str): Content type tag: Help, News, etc. Supply multiple ctypes separated by space.
+            locale (str): the locale
+        Returns:
+                json (dict)
+        """
+        if not locale:
+            locale = self.locale
+        url = f"{CONTENT_URL}/GetContentByTagAndType/{tag}/{ctype}/{locale}/"
+        return await self._get_request(url)
+
+    async def search_content_with_text(self,searchtext,locale=None,ctype=None,currentpage=None,source=None,tag=None):
+        """
+        Verb: GET
+
+        Path: /Content/Search/{locale}/
+
+        Gets content based on querystring information passed in. 
+        Provides basic search and text search capabilities.. regex ?
+        More -> https://bungie-net.github.io/#Content.SearchContentWithText
+        Args:
+            locale (str): the locale
+            ctype (str): Content type tag: Help, News, etc. Supply multiple ctypes separated by space.
+            currentpage (int): Page number for the search results, starting with page 1.
+            searchtext (str):  Word or phrase for the search.
+            source (str): For analytics, hint at the part of the app that triggered the search. Optional.
+            tag (str): Tag used on the content to be searched.
+        Returns:
+                json (dict)
+        """
+
+        querystring = {"searchtext":searchtext}
+
+        if ctype:
+            querystring.update({"ctype":ctype})
+        if currentpage:
+            querystring.update({"currentpage":currentpage})
+        if source:
+            querystring.update({"source":source})
+        if tag:
+            querystring.update({"tag":tag})
+
+
+        if not locale:
+            locale = self.locale
+
+        url = f"{CONTENT_URL}/Search/{locale}/"
+        return await self._get_request(url,params=querystring)
+
+
+    async def search_content_by_tag_and_type(self, tag, ctype, locale=None,currentpage=None):
+        """
+        Verb: GET
+
+        Path: /Content/GetContentByTagAndType/{tag}/{type}/{locale}/
+
+        Searches for Content Items that match the given Tag and Content Type.
+        More -> https://bungie-net.github.io/#Content.SearchContentByTagAndType
+        Args:
+            tag (str): Tag used on the content to be searched.
+            ctype (str): Content type tag: Help, News, etc. Supply multiple ctypes separated by space.
+            locale (str): the locale
+        Returns:
+                json (dict)
+        """
+        if not locale:
+            locale = self.locale
+        querryString=None
+        if currentpage:
+            querryString={"currentpage":currentpage}
+        url = f"{CONTENT_URL}/GetContentByTagAndType/{tag}/{ctype}/{locale}/"
+        return await self._get_request(url,params=querryString)
+
+
+   
+
 
     async def get_destiny_manifest(self):
         """Returns the current version of the manifest
