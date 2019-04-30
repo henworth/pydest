@@ -27,7 +27,7 @@ class Pydest:
                 The unique identifier of the entity to decode
             definition:
                 The type of entity to be decoded (ex. 'DestinyClassDefinition')
-            lanauge:
+            language:
                 The language to use when retrieving results from the Manifest
 
         Returns:
