@@ -6,9 +6,16 @@ from functools import partial
 
 import pydest
 
-DESTINY2_URL = 'https://www.bungie.net/Platform/Destiny2/'
-USER_URL = 'https://www.bungie.net/Platform/User/'
-GROUP_URL = 'https://www.bungie.net/Platform/GroupV2/'
+
+PLATFORM_URL = 'https://www.bungie.net/Platform'
+DESTINY2_URL = f'{PLATFORM_URL}/Destiny2'
+APP_URL = f'{PLATFORM_URL}/App'
+USER_URL = f'{PLATFORM_URL}/User'
+CONTENT_URL = f'{PLATFORM_URL}/Content'
+GROUP_URL = f'{PLATFORM_URL}/GroupV2'
+
+GROUP_FILTER_NONE = 0
+GROUP_TYPE_CLAN = 1
 
 
 class API:
@@ -34,36 +41,34 @@ class API:
             raise pydest.PydestException("Could not connect to Bungie.net")
         return json_res
 
-    async def get_bungie_net_user_by_id(self, bungie_id):
+    async def get_bungie_net_user_by_id(self, membership_id):
         """Loads a bungienet user by membership id
 
         Args:
-            bungie_id: The requested Bungie.net membership id
+            membership_id: The requested Bungie.net membership id
 
         Returns:
             json (dict)
         """
-        url = USER_URL + 'GetBungieNetUserById/{}/'
-        url = url.format(bungie_id)
+        url = f'{USER_URL}/GetBungieNetUserById/{membership_id}/'
         return await self._get_request(url)
 
-    async def get_membership_data_by_id(self, bungie_id, membership_type=-1):
+    async def get_membership_data_by_id(self, membership_id, membership_type=-1):
         """Returns a list of accounts associated with the supplied membership ID and membership
         type. This will include all linked accounts (even when hidden) if supplied credentials
         permit it.
 
         Args:
-            bungie_id:
+            membership_id (int):
                 The requested Bungie.net membership id
-            membership_type (optional):
+            membership_type (int) [optional]:
                 Type of the supplied membership ID. If not provided, data will be returned for all
                 applicable platforms.
 
         Returns:
             json (dict)
         """
-        url = USER_URL + 'GetMembershipsById/{}/{}/'
-        url = url.format(bungie_id, membership_type)
+        url = f'{USER_URL}/GetMembershipsById/{membership_id}/{membership_type}/'
         return await self._get_request(url)
 
     async def get_destiny_manifest(self):
@@ -72,26 +77,26 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'Manifest'
+        url = f'{DESTINY2_URL}/Manifest'
         return await self._get_request(url)
 
     async def search_destiny_entities(self, entity_type, search_term, page=0):
         """Gets a page list of Destiny items
 
         Args:
-            entity_type:
+            entity_type (str):
                 The type of entity - ex. 'DestinyInventoryItemDefinition'
-            search_term:
+            search_term (str):
                 The full gamertag or PSN id of the player. Spaces and case are ignored
-            page (optional):
+            page (int) [optional]:
                 Page number to return
 
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'Armory/Search/{}/{}/?page={}'
-        url = url.format(entity_type, search_term, page)
-        return await self._get_request(url)
+        params = {'page': page}
+        url = f'{DESTINY2_URL}/Armory/Search/{entity_type}/{search_term}/'
+        return await self._get_request(url, params)
 
     async def search_destiny_player(self, membership_type, display_name):
         """Returns a list of Destiny memberships given a full Gamertag or PSN ID
@@ -105,8 +110,7 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'SearchDestinyPlayer/{}/{}/'
-        url = url.format(membership_type, display_name)
+        url =f'{DESTINY2_URL}/SearchDestinyPlayer/{membership_type}/{display_name}/'
         return await self._get_request(url)
 
     async def get_profile(self, membership_type, membership_id, components):
@@ -116,7 +120,7 @@ class API:
             membership_type (int):
                 A valid non-BungieNet membership type (BungieMembershipType)
             membership_id (int):
-                Destiny membership ID
+                The requested Bungie.net membership id
             components (list):
                 A list containing the components  to include in the response.
                 (see Destiny.Responses.DestinyProfileResponse). At least one
@@ -126,9 +130,9 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + '{}/Profile/{}/?components={}'
-        url = url.format(membership_type, membership_id, ','.join([str(i) for i in components]))
-        return await self._get_request(url)
+        params = {'components': ','.join([str(i) for i in components])}
+        url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/'
+        return await self._get_request(url, params)
 
     async def get_character(self, membership_type, membership_id, character_id, components):
         """Returns character information for the supplied character
@@ -137,7 +141,7 @@ class API:
             membership_type (int):
                 A valid non-BungieNet membership type (BungieMembershipType)
             membership_id (int):
-                Destiny membership ID
+                The requested Bungie.net membership id
             character_id (int):
                 ID of the character
             components (list):
@@ -149,12 +153,16 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + '{}/Profile/{}/Character/{}/?components={}'
-        url = url.format(membership_type, membership_id, character_id, ','.join([str(i) for i in components]))
-        return await self._get_request(url)
+        params = {'components': ','.join([str(i) for i in components])}
+        url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/Character/{character_id}/'
+        return await self._get_request(url, params)
 
     async def get_clan_weekly_reward_state(self, group_id):
-        """Returns information on the weekly clan rewards and if the clan has earned
+        """
+        Verb: GET
+        Path: /Clan/{groupId}/WeeklyRewardState/
+
+        Returns information on the weekly clan rewards and if the clan has earned
         them or not. Note that this will always report rewards as not redeemed.
 
         Args:
@@ -164,8 +172,7 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'Clan/{}/WeeklyRewardState/'
-        url = url.format(group_id)
+        url = f'{DESTINY2_URL}/Clan/{group_id}/WeeklyRewardState/'
         return await self._get_request(url)
 
     async def get_item(self, membership_type, membership_id, item_instance_id, components):
@@ -177,7 +184,7 @@ class API:
             membership_type (int):
                 A valid non-BungieNet membership type (BungieMembershipType)
             membership_id (int):
-                Destiny membership ID
+                The requested Bungie.net membership id
             item_instance_id (int):
                 The instance ID of the item
             components (list):
@@ -189,9 +196,9 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + '{}/Profile/{}/Item/{}/?components={}'
-        url = url.format(membership_type, membership_id, item_instance_id, ','.join([str(i) for i in components]))
-        return await self._get_request(url)
+        params = {'components': ','.join([str(i) for i in components])}
+        url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/Item/{item_instance_id}/'
+        return await self._get_request(url, params)
 
     async def get_post_game_carnage_report(self, activity_id):
         """Gets the available post game carnage report for the activity ID
@@ -203,8 +210,7 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'Stats/PostGameCarnageReport/{}/'
-        url = url.format(activity_id)
+        url = f'{DESTINY2_URL}/Stats/PostGameCarnageReport/{activity_id}/'
         return await self._get_request(url)
 
     async def get_historical_stats_definition(self):
@@ -213,7 +219,7 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'Stats/Definition/'
+        url = f'{DESTINY2_URL}/Stats/Definition/'
         return await self._get_request(url)
 
     async def get_historical_stats(self, membership_type, membership_id, character_id=0, groups=[], modes=[]):
@@ -223,7 +229,7 @@ class API:
             membership_type (int):
                 A valid non-BungieNet membership type (BungieMembershipType)
             membership_id (int):
-                Destiny membership ID
+                The requested Bungie.net membership id
             character_id (int) [optional]:
                 The id of the character to retrieve stats for. If not provided, stats for all
                 characters will be retrieved.
@@ -234,10 +240,12 @@ class API:
                 A list containing the game modes to include in the response
                 (see Destiny.HistoricalStats.Definitions.DestinyActivityModeType).
 
+        Returns:
+            json (dict)
         """
-        url = DESTINY2_URL + '{}/Account/{}/Character/{}/Stats/?groups={}&modes={}'
-        url = url.format(membership_type, membership_id, character_id, ','.join([str(i) for i in groups]), ','.join([str(i) for i in modes]))
-        return await self._get_request(url)
+        params = {'groups': ','.join([str(i) for i in groups]), 'modes': ','.join([str(i) for i in modes])}
+        url = f'{DESTINY2_URL}/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/'
+        return await self._get_request(url, params)
 
     async def get_activity_history(self, membership_type, membership_id, character_id=0, mode=0, count=10):
         """Gets activity history for indicated character
@@ -245,17 +253,22 @@ class API:
             membership_type (int):
                 A valid non-BungieNet membership type (BungieMembershipType)
             membership_id (int):
-                Destiny membership ID
+                The requested Bungie.net membership id
             character_id (int) [optional]:
                 The id of the character to retrieve stats for. If not provided, stats for all
                 characters will be retrieved.
             mode (int) [optional]:
                 The id of the game mode to include in the response
                 (see Destiny.HistoricalStats.Definitions.DestinyActivityModeType).
+            count (int) [optional]:
+                Limit to returned results.
+
+        Returns:
+            json (dict)
         """
-        url = DESTINY2_URL + '{}/Account/{}/Character/{}/Stats/Activities/?count={}&mode={}'
-        url = url.format(membership_type, membership_id, character_id, count, mode)
-        return await self._get_request(url)
+        params = {'count': count, 'mode': mode}
+        url = f'{DESTINY2_URL}/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/'
+        return await self._get_request(url, params)
 
     async def get_public_milestone_content(self, milestone_hash):
         """Gets custom localized content for the milestone of
@@ -268,8 +281,7 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'Milestones/{}/Content/'
-        url = url.format(milestone_hash)
+        url = f'{DESTINY2_URL}/Milestones/{milestone_hash}/Content/'
         return await self._get_request(url)
 
     async def get_public_milestones(self):
@@ -278,7 +290,7 @@ class API:
         Returns:
             json (dict)
         """
-        url = DESTINY2_URL + 'Milestones/'
+        url = f'{DESTINY2_URL}/Milestones/'
         return await self._get_request(url)
 
     async def get_groups_for_member(self, membership_type, membership_id):
@@ -288,14 +300,12 @@ class API:
             membership_type (int):
                 A valid non-BungieNet membership type (BungieMembershipType)
             membership_id (int):
-                Destiny membership ID
+                The requested Bungie.net membership id
 
         Returns:
-            json(dict)
+            json (dict)
         """
-        # /{membershipType}/{membershipId}/ | 0(NO FILTER)/1(CLANS)
-        url = GROUP_URL + 'User/{}/{}/0/1/'
-        url = url.format(membership_type, membership_id)
+        url = f'{GROUP_URL}/User/{membership_type}/{membership_id}/{GROUP_FILTER_NONE}/{GROUP_TYPE_CLAN}/'
         return await self._get_request(url)
 
     async def get_group_members(self, group_id):
@@ -306,35 +316,20 @@ class API:
                 The id of the group
 
         Returns:
-            json(dict)
+            json (dict)
         """
-        url = GROUP_URL + '{}/Members/'
-        url = url.format(group_id)
-        return await self._get_request(url)
-
-    async def get_weekly_milestones(self, group_id):
-        """Gets the weekly milestones for a clan
-
-        Args:
-            group_id (int):
-                The id of the group
-
-        returns json(dict)
-        """
-        # /Clan/{groupId}/WeeklyRewardState/
-        url = DESTINY2_URL + 'Clan/{}/WeeklyRewardState/'.format(group_id)
-        # using the returned json
+        url = f'{GROUP_URL}/{group_id}/Members/'
         return await self._get_request(url)
 
     async def get_milestone_definitions(self, milestone_hash):
-        """Gets the milestones definition for a given milestoneHash
+        """Gets the milestone definition for a given milestone hash
 
         Args:
             milestone_hash (int):
                 The hash value that represents the milestone within the manifest
 
-        returns json(dict)
+        Returns:
+            json(dict)
         """
-        # /Manifest/DestinyMilestoneDefinition/{milestoneHash}
-        url = DESTINY2_URL + 'Manifest/DestinyMilestoneDefinition/{}'.format(milestone_hash)
+        url = f'{DESTINY2_URL}/Manifest/DestinyMilestoneDefinition/{milestone_hash}/'
         return await self._get_request(url)
