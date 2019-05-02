@@ -3,13 +3,6 @@ import urllib
 
 import pydest
 
-<<<<<<< HEAD
-DESTINY2_URL = 'https://www.bungie.net/Platform'
-APP_URL = f"{DESTINY2_URL}/App"
-USER_URL = f'{DESTINY2_URL}/User'
-CONTENT_URL = f"{DESTINY2_URL}/Content"
-GROUP_URL = 'https://www.bungie.net/Platform/GroupV2/'
-=======
 PLATFORM_URL = 'https://www.bungie.net/Platform'
 DESTINY2_URL = f'{PLATFORM_URL}/Destiny2'
 APP_URL = f'{PLATFORM_URL}/App'
@@ -19,7 +12,6 @@ GROUP_URL = f'{PLATFORM_URL}/GroupV2'
 
 GROUP_FILTER_NONE = 0
 GROUP_TYPE_CLAN = 1
->>>>>>> Initial pass at normalizing format
 
 
 class API:
@@ -53,20 +45,44 @@ class API:
 
 
     """
-
-    def __init__(self, api_key, session, locale):
-        self.api_key = api_key
+    def __init__(self, session, client_id=None, client_secret=None, locale='en'):
         self.session = session
         self.locale = locale
+        self.client_id = client_id
+        self.client_secret = client_secret
 
-    async def _get_request(self, url, params=None, token=None):
-        """Make an async GET request and attempt to return json (dict)"""
-        headers = {'X-API-KEY': self.api_key}
-        if token:
-            headers.update({'Authorization': f"Bearer {token}"})
-        encoded_url = urllib.parse.quote(url, safe=':/?&=,.')
+    async def _request(self, req_type, url, access_token=None, params=None, data=None):
+        """Make an async HTTP request and attempt to return json (dict)"""
+        headers = None
+        if access_token:
+            headers = {'Authorization': f"Bearer {access_token}"}
         try:
-            async with self.session.get(encoded_url, headers=headers, params=params) as r:
+            async with self.session.request(req_type, url, headers=headers, params=params) as r:
+                if r.status == 401:
+                    raise pydest.PydestTokenException("Access token has expired, refresh needed")
+                else:
+                    json_res = await r.json()
+        except aiohttp.ClientResponseError:
+            raise pydest.PydestException("Could not connect to Bungie.net")
+        return json_res
+
+    async def _get_request(self, url, params=None, access_token=None):
+        """Make an async GET request and attempt to return json (dict)"""
+        return await self._request('GET', url, access_token=access_token, params=params)
+
+    async def _post_request(self, url, data=None, access_token=None):
+        """Make an async POST request and attempt to return json (dict)"""
+        return await self._request('POST', url, access_token=access_token, data=data)
+
+    async def refresh_oauth_token(self, refresh_token):
+        data = {
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token
+        }
+        try:
+            async with self.session.post(f'{APP_URL}/oauth/token/', headers=None, data=data) as r:
                 json_res = await r.json()
         except aiohttp.ClientResponseError:
             raise pydest.PydestException("Could not connect to Bungie.net")
@@ -85,7 +101,7 @@ class API:
         url = f'{PLATFORM_URL}/GetAvailableLocales'
         return await self._get_request(url)
 
-    async def get_application_api_usage(self, application_id, oauth_token):
+    async def get_application_api_usage(self, application_id, access_token):
         """
         Verb: GET
         Path: /App/ApiUsage/{applicationId}/
@@ -106,13 +122,8 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        url = f"{APP_URL}/ApiUsage/{applicationId}"
-        return await self._get_request(url, token=oauth2Token)
-=======
         url = f'{APP_URL}/ApiUsage/{application_id}'
-        return await self._get_request(url, token=oauth2_token)
->>>>>>> Initial pass at normalizing format
+        return await self._get_request(url, access_token=access_token)
 
     async def get_bungie_application(self):
         """
@@ -140,11 +151,7 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        url = USER_URL + f'GetBungieNetUserById/{bungie_id}/'
-=======
         url = f'{USER_URL}/GetBungieNetUserById/{membership_id}'
->>>>>>> Initial pass at normalizing format
         return await self._get_request(url)
 
     async def search_users_by_name(self, name):
@@ -220,11 +227,7 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        url = USER_URL + f'{membership_type}/Profile/{bungie_id}/LinkedProfiles/'
-=======
         url = f'{USER_URL}/{membership_type}/Profile/{membership_id}/LinkedProfiles/'
->>>>>>> Initial pass at normalizing format
         return await self._get_request(url)
 
     async def get_membership_data_for_current_user(self, oauth_token):
@@ -232,12 +235,7 @@ class API:
         Verb: GET
         Path: /User/GetMembershipsForCurrentUser/
 
-<<<<<<< HEAD
-
-        Returns a list of accounts associated with signed in user. 
-=======
         Returns a list of accounts associated with signed in user.
->>>>>>> Initial pass at normalizing format
         This is useful for OAuth implementations that do not give you access to the token response.
 
         Required Scope(s):
@@ -377,12 +375,7 @@ class API:
         url = f'{CONTENT_URL}/Search/{locale}/'
         return await self._get_request(url,params=querystring)
 
-<<<<<<< HEAD
-
-    async def search_content_by_tag_and_type(self, tag, ctype, locale=None,currentpage=None):
-=======
     async def search_content_by_tag_and_type(self, tag, content_type, locale=None, current_page=None):
->>>>>>> Initial pass at normalizing format
         """
         Verb: GET
         Path: /Content/GetContentByTagAndType/{tag}/{type}/{locale}/
@@ -451,15 +444,9 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        payload = {'page': page}
-        url = DESTINY2_URL + f'Armory/Search/{entity_type}/{search_term}/'
-        return await self._get_request(url, payload)
-=======
         params = {'page': page}
         url = f'{DESTINY2_URL}/Armory/Search/{entity_type}/{search_term}/'
         return await self._get_request(url, params)
->>>>>>> Initial pass at normalizing format
 
     async def search_destiny_player(self, membership_type, display_name):
         """Returns a list of Destiny memberships given a full Gamertag or PSN ID
@@ -493,15 +480,9 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        payload = {'components': ','.join([str(i) for i in components])}
-        url = DESTINY2_URL + f'{membership_type}/Profile/{membership_id}/'
-        return await self._get_request(url, payload)
-=======
         params = {'components': ','.join([str(i) for i in components])}
         url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/'
         return await self._get_request(url, params)
->>>>>>> Initial pass at normalizing format
 
     async def get_character(self, membership_type, membership_id, character_id, components):
         """Returns character information for the supplied character
@@ -522,15 +503,9 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        payload = {'components': ','.join([str(i) for i in components])}
-        url = DESTINY2_URL + f'{membership_type}/Profile/{membership_id}/Character/{character_id}/'
-        return await self._get_request(url, payload)
-=======
         params = {'components': ','.join([str(i) for i in components])}
         url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/Character/{character_id}/'
         return await self._get_request(url, params)
->>>>>>> Initial pass at normalizing format
 
     async def get_clan_weekly_reward_state(self, group_id):
         """
@@ -571,15 +546,9 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        payload = {'components': ','.join([str(i) for i in components])}
-        url = DESTINY2_URL + f'{membership_type}/Profile/{membership_id}/Item/{item_instance_id}/'
-        return await self._get_request(url, payload)
-=======
         params = {'components': ','.join([str(i) for i in components])}
         url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/Item/{item_instance_id}/'
         return await self._get_request(url, params)
->>>>>>> Initial pass at normalizing format
 
     async def get_post_game_carnage_report(self, activity_id):
         """Gets the available post game carnage report for the activity ID
@@ -624,15 +593,9 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        payload = {'groups': ','.join([str(i) for i in groups]), 'modes': ','.join([str(i) for i in modes])}
-        url = DESTINY2_URL + f'{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/'
-        return await self._get_request(url, payload)
-=======
         params = {'groups': ','.join([str(i) for i in groups]), 'modes': ','.join([str(i) for i in modes])}
         url = f'{DESTINY2_URL}/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/'
         return await self._get_request(url, params)
->>>>>>> Initial pass at normalizing format
 
     async def get_activity_history(self, membership_type, membership_id, character_id=0, mode=0, count=10):
         """Gets activity history for indicated character
@@ -708,6 +671,20 @@ class API:
         url = f'{GROUP_URL}/{group_id}/Members/'
         return await self._get_request(url)
 
+    async def get_group_pending_members(self, group_id, access_token, refresh_token):
+        """Gets list of pending members in a group
+
+        Args:
+            group_id (int):
+                The id of the group
+
+        Returns:
+            json(dict)
+        """
+        url = f'{GROUP_URL}/{group_id}/Members/Pending/'
+        return await self._get_request(
+            url, access_token=access_token, refresh_token=refresh_token)
+
     async def get_milestone_definitions(self, milestone_hash):
         """Gets the milestone definition for a given milestone hash
 
@@ -743,15 +720,9 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        payload = {'components': ','.join([str(i) for i in components])}
-        url = DESTINY2_URL + f'{membership_type}/Profile/{membership_id}/Character/{character_id}/Vendors/'
-        return await self._get_request(url, payload)
-=======
         params = {'components': ','.join([str(i) for i in components])}
         url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/Character/{character_id}/Vendors/'
         return await self._get_request(url, params)
->>>>>>> Initial pass at normalizing format
 
     
     async def get_vendor(self, membership_type, membership_id, character_id, vendor_hash, components):
@@ -775,12 +746,6 @@ class API:
         Returns:
             json (dict)
         """
-<<<<<<< HEAD
-        payload = {'components': ','.join([str(i) for i in components])}
-        url = DESTINY2_URL + f'{membership_type}/Profile/{membership_id}/Character/{character_id}/Vendors/{vendor_hash}/'
-        return await self._get_request(url, payload)
-=======
         params = {'components': ','.join([str(i) for i in components])}
         url = f'{DESTINY2_URL}/{membership_type}/Profile/{membership_id}/Character/{character_id}/Vendors/{vendor_hash}/'
         return await self._get_request(url, params)
->>>>>>> Initial pass at normalizing format
