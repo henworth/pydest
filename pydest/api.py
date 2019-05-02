@@ -25,19 +25,46 @@ class API:
     official API documentation as well. The documentation can be
     found at https://bungie-net.github.io/multi/index.html
     """
-
-    def __init__(self, api_key, session):
-        self.api_key = api_key
+    def __init__(self, session, client_id=None, client_secret=None):
         self.session = session
+        self.client_id = client_id
+        self.client_secret = client_secret
 
-    async def _get_request(self, url):
-        """Make an async GET request and attempt to return json (dict)"""
-        headers = {'X-API-KEY':'{}'.format(self.api_key)}
+    async def _request(self, req_type, url, access_token=None, params=None, data=None):
+        """Make an async HTTP request and attempt to return json (dict)"""
+        headers = None
+        if access_token:
+            headers = {'Authorization': f"Bearer {access_token}"}
         encoded_url = urllib.parse.quote(url, safe=':/?&=,.')
         try:
-            async with self.session.get(encoded_url, headers=headers) as r:
+            async with self.session.request(req_type, encoded_url, headers=headers, params=params) as r:
+                if r.status == 401:
+                    raise pydest.PydestTokenException("Access token has expired, refresh needed")
+                else:
+                    json_res = await r.json()
+        except aiohttp.ClientResponseError:
+            raise pydest.PydestException("Could not connect to Bungie.net")
+        return json_res
+
+    async def _get_request(self, url, params=None, access_token=None):
+        """Make an async GET request and attempt to return json (dict)"""
+        return await self._request('GET', url, access_token=access_token, params=params)
+
+    async def _post_request(self, url, data=None, access_token=None):
+        """Make an async POST request and attempt to return json (dict)"""
+        return await self._request('POST', url, access_token=access_token, data=data)
+
+    async def refresh_oauth_token(self, refresh_token):
+        data = {
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token
+        }
+        try:
+            async with self.session.post(f'{APP_URL}/oauth/token/', headers=None, data=data) as r:
                 json_res = await r.json()
-        except aiohttp.client_exceptions.ClientResponseError:
+        except aiohttp.ClientResponseError:
             raise pydest.PydestException("Could not connect to Bungie.net")
         return json_res
 
@@ -320,6 +347,20 @@ class API:
         """
         url = f'{GROUP_URL}/{group_id}/Members/'
         return await self._get_request(url)
+
+    async def get_group_pending_members(self, group_id, access_token, refresh_token):
+        """Gets list of pending members in a group
+
+        Args:
+            group_id (int):
+                The id of the group
+
+        Returns:
+            json(dict)
+        """
+        url = f'{GROUP_URL}/{group_id}/Members/Pending/'
+        return await self._get_request(
+            url, access_token=access_token, refresh_token=refresh_token)
 
     async def get_milestone_definitions(self, milestone_hash):
         """Gets the milestone definition for a given milestone hash
