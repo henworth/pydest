@@ -25,6 +25,7 @@ class API:
     official API documentation as well. The documentation can be
     found at https://bungie-net.github.io/multi/index.html
     """
+
     def __init__(self, session, client_id=None, client_secret=None):
         self.session = session
         self.client_id = client_id
@@ -39,7 +40,8 @@ class API:
         try:
             async with self.session.request(req_type, encoded_url, headers=headers, params=params) as r:
                 if r.status == 401:
-                    raise pydest.PydestTokenException("Access token has expired, refresh needed")
+                    raise pydest.PydestTokenException(
+                        "Access token has expired, refresh needed")
                 else:
                     json_res = await r.json()
         except aiohttp.ClientResponseError:
@@ -137,7 +139,7 @@ class API:
         Returns:
             json (dict)
         """
-        url =f'{DESTINY2_URL}/SearchDestinyPlayer/{membership_type}/{display_name}/'
+        url = f'{DESTINY2_URL}/SearchDestinyPlayer/{membership_type}/{display_name}/'
         return await self._get_request(url)
 
     async def get_profile(self, membership_type, membership_id, components):
@@ -270,7 +272,8 @@ class API:
         Returns:
             json (dict)
         """
-        params = {'groups': ','.join([str(i) for i in groups]), 'modes': ','.join([str(i) for i in modes])}
+        params = {'groups': ','.join([str(i) for i in groups]), 'modes': ','.join([
+            str(i) for i in modes])}
         url = f'{DESTINY2_URL}/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/'
         return await self._get_request(url, params)
 
@@ -359,8 +362,7 @@ class API:
             json(dict)
         """
         url = f'{GROUP_URL}/{group_id}/Members/Pending/'
-        return await self._get_request(
-            url, access_token=access_token, refresh_token=refresh_token)
+        return await self._get_request(url, access_token=access_token)
 
     async def get_milestone_definitions(self, milestone_hash):
         """Gets the milestone definition for a given milestone hash
