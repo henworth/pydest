@@ -323,6 +323,22 @@ class API:
         url = f'{DESTINY2_URL}/Milestones/'
         return await self._get_request(url)
 
+    async def get_group(self, group_id):
+        """Get information about a specific group
+
+        Path: /GroupV2/{group_id}/
+        Verb: GET
+
+        Args:
+            group_id (int):
+                The id of the group
+
+        Returns:
+            json (dict)
+        """
+        url = f'{GROUP_URL}/{group_id}/'
+        return await self._get_request(url)
+
     async def get_groups_for_member(self, membership_type, membership_id):
         """Gets information about the groups an individual member has joined
 
@@ -351,18 +367,69 @@ class API:
         url = f'{GROUP_URL}/{group_id}/Members/'
         return await self._get_request(url)
 
-    async def get_group_pending_members(self, group_id, access_token, refresh_token):
+    async def get_group_pending_members(self, group_id, access_token):
         """Gets list of pending members in a group
+
+        Path: /GroupV2/{group_id}/Members/Pending/
+        Verb: GET
+
+        Required Scope(s):
+            oauth2: AdminGroups
 
         Args:
             group_id (int):
                 The id of the group
+            access_token (str):
+                OAuth access token
 
         Returns:
             json(dict)
         """
         url = f'{GROUP_URL}/{group_id}/Members/Pending/'
         return await self._get_request(url, access_token=access_token)
+
+    async def get_group_invited_members(self, group_id, access_token):
+        """Gets list of invited members in a group
+
+        Path: /GroupV2/{group_id}/Members/InvitedIndividuals/
+        Verb: GET
+
+        Args:
+            group_id (int):
+                The id of the group
+            access_token (str):
+                OAuth access token
+
+        Returns:
+            json(dict)
+        """
+        url = f'{GROUP_URL}/{group_id}/Members/InvitedIndividuals/'
+        return await self._get_request(url, access_token=access_token)
+
+    async def group_invite_member(self, group_id, membership_type, membership_id, access_token):
+        """Invite a user to join this group
+
+        Path: /GroupV2/{group_id}/Members/IndividualInvite/{membership_type}/{membership_id}/
+        Verb: POST
+
+        Required Scope(s):
+            oauth2: AdminGroups
+
+        Args:
+            group_id (int):
+                The id of the group
+            membership_type (int):
+                A valid non-BungieNet membership type (BungieMembershipType)
+            membership_id (int):
+                The requested Bungie.net membership id
+            access_token (str):
+                OAuth access token
+
+        Returns:
+            json(dict)
+        """
+        url = f'{GROUP_URL}/{group_id}/Members/IndividualInvite/{membership_type}/{membership_id}/'
+        return await self._post_request(url, access_token=access_token)
 
     async def get_milestone_definitions(self, milestone_hash):
         """Gets the milestone definition for a given milestone hash
