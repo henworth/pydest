@@ -33,9 +33,9 @@ class API:
 
     async def _request(self, req_type, url, access_token=None, params=None, data=None):
         """Make an async HTTP request and attempt to return json (dict)"""
-        headers = None
+        headers = {}
         if access_token:
-            headers = {'Authorization': f"Bearer {access_token}"}
+            headers.update({'Authorization': f"Bearer {access_token}"})
         encoded_url = urllib.parse.quote(url, safe=':/?&=,.')
         try:
             async with self.session.request(req_type, encoded_url, headers=headers, params=params) as r:
