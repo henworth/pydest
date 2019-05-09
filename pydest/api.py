@@ -38,7 +38,7 @@ class API:
             headers.update({'Authorization': f"Bearer {access_token}"})
         encoded_url = urllib.parse.quote(url, safe=':/?&=,.')
         try:
-            async with self.session.request(req_type, encoded_url, headers=headers, params=params) as r:
+            async with self.session.request(req_type, encoded_url, headers=headers, params=params, json=data) as r:
                 if r.status == 401:
                     raise pydest.PydestTokenException(
                         "Access token has expired, refresh needed")
@@ -406,10 +406,38 @@ class API:
         url = f'{GROUP_URL}/{group_id}/Members/InvitedIndividuals/'
         return await self._get_request(url, access_token=access_token)
 
-    async def group_invite_member(self, group_id, membership_type, membership_id, access_token):
+    async def group_invite_member(self, group_id, membership_type, membership_id, message, access_token):
         """Invite a user to join this group
 
         Path: /GroupV2/{group_id}/Members/IndividualInvite/{membership_type}/{membership_id}/
+        Verb: POST
+
+        Required Scope(s):
+            oauth2: AdminGroups
+
+        Args:
+            group_id (int):
+                The id of the group
+            membership_type (int):
+                A valid non-BungieNet membership type (BungieMembershipType)
+            membership_id (int):
+                The requested Bungie.net membership id
+            message (str):
+                Message to send along with the invite
+            access_token (str):
+                OAuth access token
+
+        Returns:
+            json(dict)
+        """
+        data = {'message': message}
+        url = f'{GROUP_URL}/{group_id}/Members/IndividualInvite/{membership_type}/{membership_id}/'
+        return await self._post_request(url, data=data, access_token=access_token)
+
+    async def group_kick_member(self, group_id, membership_type, membership_id, access_token):
+        """Kick a user from this group
+
+        Path: /GroupV2/{group_id}/Members/{membership_type}/{membership_id}/Kick/
         Verb: POST
 
         Required Scope(s):
@@ -428,8 +456,36 @@ class API:
         Returns:
             json(dict)
         """
-        url = f'{GROUP_URL}/{group_id}/Members/IndividualInvite/{membership_type}/{membership_id}/'
+        url = f'{GROUP_URL}/{group_id}/Members/{membership_type}/{membership_id}/Kick/'
         return await self._post_request(url, access_token=access_token)
+
+    async def group_approve_pending_member(self, group_id, membership_type, membership_id, message, access_token):
+        """Approve a pending a user applying to join this group
+
+        Path: /GroupV2/{group_id}/Members/Approve/{membership_type}/{membership_id}/
+        Verb: POST
+
+        Required Scope(s):
+            oauth2: AdminGroups
+
+        Args:
+            group_id (int):
+                The id of the group
+            membership_type (int):
+                A valid non-BungieNet membership type (BungieMembershipType)
+            membership_id (int):
+                The requested Bungie.net membership id
+            message (str):
+                Message to send along with the invite
+            access_token (str):
+                OAuth access token
+
+        Returns:
+            json(dict)
+        """
+        data = {'message': message}
+        url = f'{GROUP_URL}/{group_id}/Members/Approve/{membership_type}/{membership_id}/'
+        return await self._post_request(url, data=data, access_token=access_token)
 
     async def get_milestone_definitions(self, milestone_hash):
         """Gets the milestone definition for a given milestone hash
