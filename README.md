@@ -9,7 +9,7 @@ import pydest
 
 destiny = pydest.Pydest('your-api-key')
 json = await destiny.api.search_destiny_player(1, 'slayer117')
-destiny.close()
+await destiny.close()
 ```
 
 Pydest also has full support for easily decoding hash values from the Destiny 2 manifest.
@@ -19,7 +19,7 @@ import pydest
 
 destiny = pydest.Pydest('your-api-key')
 json = await pydest.decode_hash(80726883, 'DestinyActivityDefinition')
-destiny.close()
+await destiny.close()
 ```
 
 For some working examples of Pydest, refer to the [examples](./examples) folder.
@@ -37,9 +37,7 @@ Usually `pip` will handle the installation of these.
 
 ## Installation
 ```
-$ git clone https://github.com/jgayfer/pydest
-$ cd pydest
-$ python3 -m pip install -U .
+$ pip install pydest
 ```
 To verify that Pydest has installed correctly, open up the Python interpreter and run the command `import pydest`. If the interpreter doesn't make a fuss, then Pydest has installed successfully.
 
@@ -65,6 +63,8 @@ A reference to an [API](/pydest/api.py) object. This is used to call Destiny 2 A
 ---
 
 > close()
+
+This function is a coroutine.
 
 Closes the Pydest client session. This should be called when the Pydest object is no longer needed. If this isn't called, a warning message will be displayed, but Pydest will stil function.
 
