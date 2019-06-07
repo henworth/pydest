@@ -57,8 +57,8 @@ class Pydest:
         """
         await self._manifest.update_manifest(language)
 
-    def close(self):
-        asyncio.ensure_future(self._session.close())
+    async def close(self):
+        await self._session.close()
 
 
 class PydestException(Exception):
