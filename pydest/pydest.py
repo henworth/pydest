@@ -25,7 +25,9 @@ class Pydest:
         headers = {'X-API-KEY': api_key}
 
         self._loop = asyncio.get_event_loop() if loop is None else loop
-        self._session = aiohttp.ClientSession(loop=self._loop, headers=headers)
+
+        connector = aiohttp.TCPConnector(limit=25)
+        self._session = aiohttp.ClientSession(loop=self._loop, headers=headers, connector=connector)
         self.api = API(self._session, client_id, client_secret)
         self._manifest = Manifest(self.api)
 
@@ -65,5 +67,9 @@ class PydestException(Exception):
     pass
 
 
-class PydestTokenException(PydestException):
+class PydestTokenException(Exception):
+    pass
+
+
+class PydestPrivateHistoryException(Exception):
     pass

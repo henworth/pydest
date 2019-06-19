@@ -46,6 +46,14 @@ class API:
                     json_res = await r.json()
         except aiohttp.ClientResponseError:
             raise pydest.PydestException("Could not connect to Bungie.net")
+
+        message = json_res.get('Message')
+        error_code = json_res.get('ErrorCode')
+        if message != 'Ok':
+            error = f"ErrorCode: {json_res.get('ErrorCode')} - {message}"
+            if error_code == 1665:
+                raise pydest.PydestPrivateHistoryException(error)
+            raise pydest.PydestException(error)
         return json_res
 
     async def _get_request(self, url, params=None, access_token=None):
