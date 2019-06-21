@@ -90,6 +90,21 @@ class API:
         url = f'{USER_URL}/GetBungieNetUserById/{membership_id}/'
         return await self._get_request(url)
 
+    async def get_membership_current_user(self, access_token):
+        """Returns a list of accounts associated with the supplied OAuth access token.
+        This will include all linked accounts (even when hidden) if supplied credentials
+        permit it.
+
+        Args:
+           access_token (str):
+                OAuth access token
+
+        Returns:
+            json (dict)
+        """
+        url = f'{USER_URL}/GetMembershipsForCurrentUser/'
+        return await self._get_request(url, access_token=access_token)
+
     async def get_membership_data_by_id(self, membership_id, membership_type=-1):
         """Returns a list of accounts associated with the supplied membership ID and membership
         type. This will include all linked accounts (even when hidden) if supplied credentials
