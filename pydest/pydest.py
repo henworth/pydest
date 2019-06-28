@@ -73,3 +73,7 @@ class PydestTokenException(Exception):
 
 class PydestPrivateHistoryException(Exception):
     pass
+
+
+class PydestMaintenanceException(Exception):
+    pass
