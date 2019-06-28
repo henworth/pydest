@@ -51,6 +51,8 @@ class API:
         error_code = json_res.get('ErrorCode')
         if message != 'Ok':
             error = f"ErrorCode: {json_res.get('ErrorCode')} - {message}"
+            if error_code == 5:
+                raise pydest.PydestMaintenanceException(error)
             if error_code == 1665:
                 raise pydest.PydestPrivateHistoryException(error)
             raise pydest.PydestException(error)
