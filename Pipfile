@@ -1,0 +1,13 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+aiohttp = ">~2.2.5"
+
+[dev-packages]
+autopep8 = "*"
+pylint = "*"
+pytest = ">~3.2.1"
+pytest-asyncio = ">~0.6.0"

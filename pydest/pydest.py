@@ -1,13 +1,13 @@
 import aiohttp
 import asyncio
-import os
-import zipfile
 
 from pydest.api import API
+from pydest.base import _BaseAPI
+from pydest.errors import PydestException, PydestTokenException
 from pydest.manifest import Manifest
 
 
-class Pydest:
+class Pydest(_BaseAPI):
 
     def __init__(self, api_key, loop=None, client_id=None, client_secret=None):
         """Base class for Pydest
@@ -26,8 +26,25 @@ class Pydest:
 
         self._loop = asyncio.get_event_loop() if loop is None else loop
         self._session = aiohttp.ClientSession(loop=self._loop, headers=headers)
+
+        super(Pydest, self).__init__(self._session, client_id, client_secret)
+
         self.api = API(self._session, client_id, client_secret)
         self._manifest = Manifest(self.api)
+
+    async def refresh_oauth_token(self, refresh_token):
+        data = {
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token
+        }
+        try:
+            async with self._session.post(f'{self.APP_URL}/oauth/token/', headers=None, data=data) as r:
+                json_res = await r.json()
+        except aiohttp.ClientResponseError:
+            raise PydestException("Could not connect to Bungie.net")
+        return json_res
 
     async def decode_hash(self, hash_id, definition, language='en'):
         """Get the corresponding static info for an item given it's hash value from the Manifest
@@ -59,11 +76,3 @@ class Pydest:
 
     def close(self):
         asyncio.ensure_future(self._session.close())
-
-
-class PydestException(Exception):
-    pass
-
-
-class PydestTokenException(PydestException):
-    pass
