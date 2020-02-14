@@ -302,26 +302,32 @@ class API:
         url = f'{DESTINY2_URL}/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/'
         return await self._get_request(url, params)
 
-    async def get_activity_history(self, membership_type, membership_id, character_id=0, mode=0, count=10):
+    async def get_activity_history(self, membership_type, membership_id, character_id=0, count=1, mode=None, page=0):
         """Gets activity history for indicated character
+
+        Path: /{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/
+        Verb: GET
+
         Args:
             membership_type (int):
-                A valid non-BungieNet membership type (BungieMembershipType)
+                A valid non-BungieNet membership type (BungieMembershipType).
             membership_id (int):
-                The requested Bungie.net membership id
+                The Destiny membershipId of the user to retrieve.
             character_id (int) [optional]:
                 The id of the character to retrieve stats for. If not provided, stats for all
                 characters will be retrieved.
-            mode (int) [optional]:
-                The id of the game mode to include in the response
-                (see Destiny.HistoricalStats.Definitions.DestinyActivityModeType).
-            count (int) [optional]:
-                Limit to returned results.
+            count (int):
+                Number of rows to return.
+            mode (int):
+                A filter for the activity mode to be returned. None returns all activities.
+                (see Destiny.HistoricalStats.Definitions.DestinyActivityModeType for valid values.)
+            page (int):
+                Page number to return, starting with 0.
 
         Returns:
-            json (dict)
+            json(dict)
         """
-        params = {'count': count, 'mode': mode}
+        params = {'count': count, 'mode': mode, 'page': page}
         url = f'{DESTINY2_URL}/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/'
         return await self._get_request(url, params)
 
@@ -379,7 +385,7 @@ class API:
         url = f'{GROUP_URL}/User/{membership_type}/{membership_id}/{GROUP_FILTER_NONE}/{GROUP_TYPE_CLAN}/'
         return await self._get_request(url)
 
-    async def get_group_members(self, group_id):
+    async def get_members_of_group(self, group_id):
         """Gets list of members in a group
 
         Args:
@@ -524,3 +530,4 @@ class API:
         """
         url = f'{DESTINY2_URL}/Manifest/DestinyMilestoneDefinition/{milestone_hash}/'
         return await self._get_request(url)
+ 

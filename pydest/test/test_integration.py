@@ -12,7 +12,7 @@ with open('credentials.json') as f:
 class BaseTestClass(object):
 
     _membership_id = 4611686018467257491
-    _membership_type = 4
+    _membership_type = 3
 
     @pytest.mark.asyncio
     async def test_is_dict(self, res):
@@ -178,6 +178,17 @@ class TestGetGroupForMember(BaseTestClass):
         await destiny.close()
         return r
 
+class TestGetMembersOfGroup(BaseTestClass):
+
+    @pytest.mark.asyncio
+    @pytest.fixture
+    async def res(self):
+        destiny = pydest.Pydest(api_key)
+        group = await destiny.api.get_groups_for_member(1, self._membership_id)
+        group_id = group['Response']['results'][0]['member']['groupId']
+        r = await destiny.api.get_members_of_group(group_id)
+        await destiny.close()
+        return r
 
 class TestGetMilestoneDefinitions(BaseTestClass):
 
@@ -196,3 +207,12 @@ class TestGetMilestoneDefinitions(BaseTestClass):
         await destiny.close()
         return r
 
+class TestGetActivityHistory(BaseTestClass):
+
+    @pytest.mark.asyncio
+    @pytest.fixture
+    async def res(self):
+        destiny = pydest.Pydest(api_key)
+        r = await destiny.api.get_activity_history(self._membership_type, self._membership_id, 0, 1, None, 0)
+        await destiny.close()
+        return r
